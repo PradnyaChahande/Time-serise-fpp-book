@@ -1,0 +1,595 @@
+---
+title: "Assignment 1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+require(fpp)
+library(fma)
+library(forecast)
+library(segmented)
+econsumption
+```
+
+
+## 2.8 Question 1.a
+```{r}
+par(mfrow=c(1,2))
+
+head(dole)
+hist(dole)
+
+lambda <- BoxCox.lambda(dole)
+hist(BoxCox(dole,lambda))
+
+
+plot(dole, xlab="Year",ylab="#People Thousands",main="Total People on unemployed benefits")
+plot(BoxCox(dole,lambda), xlab="Year",ylab="#People in Thousands",main="Total People on unemployed benefits")
+
+
+seasonplot(dole ,ylab="#People", xlab="Year",  main="Seasonal:Total people on unemployed benefits",   year.labels=TRUE, year.labels.left=TRUE, col=1:20, pch=19)
+
+seasonplot(BoxCox(dole,lambda) ,ylab="#People", xlab="Year",  main="Seasonal: Total people on unemployed benefits",   year.labels=TRUE, year.labels.left=TRUE, col=1:20, pch=19)
+
+
+
+monthplot(dole,ylab="#People in Thousands",xlab="Month",xaxt="n", main="Monthly: Total people on nemployed benefits")
+axis(1,at=1:12,labels=month.abb,cex=0.8)
+
+monthplot(BoxCox(dole,lambda),ylab="#People in Thousands",xlab="Month",xaxt="n", main="Monthly: Total people on unemployed benefits")
+axis(1,at=1:12,labels=month.abb,cex=0.8)
+
+```
+
+####Box Cox transformation improve the distinction of the variation in the plots.
+
+## 2.8 Question 1.b
+```{r}
+par(mfrow=c(1,2))
+
+head(usdeaths)
+hist(usdeaths)
+lambda <- BoxCox.lambda(usdeaths)
+#Orginal dataset is somewhat normal do not much effect after transformation 
+hist(BoxCox(usdeaths ,lambda))
+
+plot(usdeaths , xlab="Year",ylab="#People",main="Total accidental deaths in the US")
+plot(BoxCox(usdeaths ,lambda), xlab="Year",ylab="Transformed #People",main="Total accidental deaths in the US")
+
+seasonplot(usdeaths  ,ylab="#People", xlab="Year",  main="Total accidental deaths in the US",   year.labels=TRUE, year.labels.left=TRUE, col=1:20, pch=19)
+seasonplot(BoxCox(usdeaths ,lambda) ,ylab="Transformed #People", xlab="Year",  main="Total accidental deaths in the US",   year.labels=TRUE, year.labels.left=TRUE, col=1:20, pch=19)
+
+
+monthplot(usdeaths ,ylab="#People",xlab="Month",xaxt="n", main="Total accidental deaths in the US")
+axis(1,at=1:12,labels=month.abb,cex=0.8)
+monthplot(BoxCox(usdeaths ,lambda),ylab="Transformed #People",xlab="Month",xaxt="n", main="Total accidental deaths in the US")
+axis(1,at=1:12,labels=month.abb,cex=0.8)
+
+```
+
+### The transformations of the data show very similar variation in the accidental deaths.
+
+## 2.8 Question 1.c
+```{r}
+par(mfrow=c(1,2))
+
+head(bricksq)
+hist(bricksq)
+lambda <- BoxCox.lambda(bricksq  )
+hist(BoxCox(bricksq  ,lambda))
+
+
+plot(bricksq  , xlab="Year",ylab="#Bricks in Millions of units",main="Total accidental deaths in the United States")
+plot(BoxCox(bricksq  ,lambda), xlab="Year",ylab="#Bricks in Millions of units",main="Total accidental deaths in the United States")
+
+seasonplot(bricksq   ,ylab="#Bricks in Millions of units", xlab="Year",  main="Total accidental deaths in the United States",   year.labels=TRUE, year.labels.left=TRUE, col=1:20, pch=19)
+seasonplot(BoxCox(bricksq  ,lambda) ,ylab="#Bricks in Millions of units", xlab="Year",  main="Total accidental deaths in the United States",   year.labels=TRUE, year.labels.left=TRUE, col=1:20, pch=19)
+
+
+monthplot(bricksq  ,ylab="Millions of units",xlab="Month",xaxt="n", main="Total accidental deaths in the United States")
+axis(1,at=1:12,labels=month.abb,cex=0.8)
+monthplot(BoxCox(bricksq  ,lambda),ylab="Transformed #People",xlab="Month",xaxt="n", main="Total accidental deaths in the United States")
+axis(1,at=1:12,labels=month.abb,cex=0.8)
+
+```
+
+###The transformations are very similar in describing the prick production in Portland, Austrailia, and similar to the accidental deaths, in that the range in the plots vary dramatically
+
+## 2.8 Question 2.a
+  
+```{r}
+par(mfrow=c(1,2))
+hist(dowjones)
+hist(BoxCox(dowjones  ,0.5))
+plot(dowjones, main="Dow Jones Index")
+plot(BoxCox(dowjones  ,0.5), main="Dow Jones Index")
+
+```
+
+## 2.8 Question 2.b
+```{r}
+par(mfrow=c(1,2))
+dowj_drift <- rwf(dowjones , h=10, drift=TRUE)
+dowj_drift_log <- rwf(log(dowjones), h = 10, drift = TRUE)
+
+plot(dowj_drift,main="Drift Dow Jones", ylab="Index",xlab="Year")
+legend("topleft",lty=1, col=c(4),legend=c("Drift"))
+plot(dowj_drift_log,main="Log Dow Jones", ylab="Index",xlab="Year")
+legend("topleft",lty=1, col=c(4),legend=c("Log"))
+```
+
+## 2.8 Question 2.c
+```{r}
+par(mfrow=c(1,1))
+dj2 <- window(dowjones, start=1, end=65-.1)
+dj2m <- meanf(dj2,h=12)
+dj2d <- rwf(dj2,h=12)
+dj2d1 <- rwf(dj2,h=12, drift = TRUE)
+plot(dj2m, main="Dow Jones Index", xlim=c(1,78))
+lines(dj2d$mean,col=2)
+lines(dj2d1$mean,col=3)
+lines(dowjones)
+legend("topleft", lty=1, col=c(4,2,3), legend=c("Mean ","Naive","Drifit"))
+```
+
+###The forecasts are not identical. It depends on where the forecast begins and the upward/downward trend that is ocurring.
+
+## 2.8 Question 2.d
+```{r}
+dowj_drift <- rwf(dowjones , h=24, drift=TRUE)
+dowj_mean <-meanf(dowjones, h=42)
+dowj_naive <-naive(dowjones, h=42)
+
+plot(dowj_drift,main="Drift Method Dow Jones", ylab="Index",xlab="Year")
+
+lines(dowj_mean$mean, col=2)
+lines(dowj_naive$mean, col=3)
+legend("topleft",lty=1, col=c(4,2,3),legend=c("Mean","Naive","Drift"))
+```
+
+###The drift method is a large improvement over the Mean and Naive method because it is more dynamic in capturing the upward/downward trend that is occurring.
+
+##2.8 Question 3.a
+```{r}
+head(ibmclose)
+summary(ibmclose)
+
+par(mfrow=c(2,2))
+plot(ibmclose)
+qqnorm(ibmclose)
+qqline(ibmclose)
+plot(log(ibmclose))
+plot(sqrt(ibmclose))
+
+```
+
+##2.8 Question 3.b
+```{r}
+ibmclose_train <- window(ibmclose ,end=300)
+ibmclose_test <- window(ibmclose ,start=301)
+```
+
+##2.8 Question 3.c
+```{r}
+par(mfrow=c(1,1))
+ibm_avg <- meanf(ibmclose_train,h=54)$mean
+ibm_naive <- naive(ibmclose_train ,h=54)$mean
+ibm_drift <- rwf(ibmclose_train ,drift=TRUE,h=54)$mean
+
+plot(ibmclose_train,main="IBM Close Prices",xlab="Day",ylab="Price")
+
+lines(ibm_naive,col=2)
+lines(ibm_avg,col=4)
+lines(ibm_drift,col=3)
+lines(ibmclose_test,col=8)
+
+legend("topleft",lty=1,col=c(4,2,3),
+  legend=c("Mean Method","Naive Method","Drift Method"))
+```
+
+####Comparing forecast
+```{r}
+
+plot(ibmclose_train,main="IBM Close Prices", ylab="Price",xlab="Day", xlim=c(250,369), ylim=c(300,505))
+lines(ibm_naive,col=2)
+lines(ibm_avg,col=4)
+lines(ibm_drift,col=3)
+lines(ibmclose_test,col=8)
+legend("topleft",lty=1,col=c(4,2,3),
+  legend=c("Mean Method","Naive Method","Drift Method"))
+
+```
+
+###The drift method is an improvement over the Mean and Naive method because it is more dynamic in capturing the upward/downward trend that is occurring. Whereas the Naive and Mean are more static
+
+##2.8 Question 4.a
+```{r}
+head(hsales)
+tail(hsales)
+summary(hsales)
+
+
+par(mfrow=c(2,2))
+plot(hsales)
+qqnorm(hsales)
+qqline(hsales)
+plot(log(hsales))
+acf(hsales)
+```
+
+##2.8 Question 4.b
+```{r}
+hsales_ts <- ts(hsales,start=1,end=275)
+hsales_train <- window(hsales_ts,end=251)
+hsales_test <- window(hsales_ts,start=251)
+```
+
+##2.8 Question 4.c
+```{r}
+par(mfrow=c(1,1))
+hsales_avg <- meanf(hsales_train,h=24)$mean
+hsales_naive <- naive(hsales_train,h=24)$mean
+hsales_drift <- rwf(hsales_train,drift=TRUE,h=24)$mean
+
+plot(hsales_train,main="House Sales",xlab="Month",ylab="Price")
+
+lines(hsales_naive,col=2)
+lines(hsales_avg,col=4)
+lines(hsales_drift,col=3)
+lines(hsales_test,col=8)
+
+legend("topleft",lty=1,col=c(4,2,3),
+  legend=c("Mean Method","Naive Method","Drift Method"))
+```
+
+####Comparing with test set
+```{r}
+plot(hsales_train,main="House sales", ylab="House Sales",xlab="Month", xlim=c(240,275), ylim=c(35,75))
+
+lines(hsales_naive,col=2)
+lines(hsales_avg,col=4)
+lines(hsales_drift,col=3)
+lines(hsales_test,col=8)
+
+legend("topleft",lty=1,col=c(4,2,3), legend=c("Mean Method","Naive Method","Drift Method"))
+```
+
+###Mean method is worse than the Drift and the Naive method. The variability in the data is making the forcasts unable to be reliable results. Also the Drift and Naive method are producing nearly indistinguishable results.
+
+
+
+## 4.10 Question 1.a
+```{r}
+plot(Mwh ~ temp, data = econsumption, main = "Econsumption")
+fit = lm(formula = Mwh  ~ temp, data = econsumption)
+abline(fit, col=5)
+summary(fit)
+
+```
+###As temperature increases the amount of electricity used decreases. This may be due to the use of Air Conditioning in the small town- the colder the temperaturee the more likely a house hold would use their AC.
+
+## 4.10 Question 1.b
+```{r}
+par(mfrow=c(2,2))
+plot(fit)
+```
+
+### The model appears to be a great fit to the data. Based on the QQ-plot and the Residuals vs Fitted observation 8 appears to be an outliers where the electricity used does not correspond to the trend in temperature. Besides that data point, the observations fit the assumptions of normality fairly- there is linearity in the QQ plot as well as the residuals vs fitted show nearly constant variance. But due to the limited number of observations x<30 this may be a suspect sample size.
+
+## 4.10 Question 1.c
+```{r}
+coeffs = coefficients(fit)
+pred_temp = c(10, 35)
+p_temp = coeffs[1] + coeffs[2]*pred_temp 
+p_temp
+```
+###The predictions seems to be in the general trend of the model. Although, we are basing this on less than data 30 points so there may be issues with normality.
+
+## 4.10 Question 1.d
+```{r}
+par(mfrow=c(1,2))
+fcast <- forecast(fit, newdata=data.frame(temp=10))
+plot(fcast, xlab="temp", ylab="Mwh")
+fcast2 <- forecast(fit, newdata=data.frame(temp=35))
+plot(fcast2, xlab="temp", ylab="Mwh")
+```
+
+```{r}
+temp10 = data.frame(temp=10)
+temp35 = data.frame(temp=35)
+predict(fit, temp10, interval="predict") 
+```
+```{r}
+predict(fit, temp35, interval="predict") 
+```
+
+## 4.10 Question 2.a
+```{r}
+olympic1 <- matrix(c(1896, 54.2, 1900, 49.4, 1904, 49.2, 1908, 50, 1912 , 48.2, 1920 , 49.6, 1924 , 47.6 , 1928 , 47.8, 1932, 46.2, 1936, 46.5, 1948, 46.2, 1952, 45.9, 1956, 46.7, 1960, 44.9, 1964, 45.1, 1968, 43.8 , 1972, 44.66, 1976, 44.26, 1980, 44.6, 1984, 44.27, 1988 , 43.87 , 1992, 43.5, 1996 , 43.49 , 2000, 43.84 , 2004, 44, 2008, 43.75, 2012, 43.94, 2016 , 43.03) ,ncol=2,byrow=TRUE)
+colnames(olympic1) <- c("Year","time")
+olympic_ts <- ts(olympic1,start=1,end=28)
+```
+
+## 4.10 Question 2.b
+```{r}
+plot(time ~ Year, data = olympic_ts, main = "Olympic Gold Medal Times")
+```
+
+###The first observation appears to be an outlier where the winner ran the 400M in 54.2 seconds. There continues to be a downward trend until 1992 where the progressive olympics have gold medal times plateau around 43.65 seconds.
+
+## 4.10 Question 2.c
+```{r}
+fit1 = lm(formula = time  ~ Year, data = olympic_ts)
+plot(time ~ Year, data = olympic_ts, main = "Olympic Gold Medal Times")
+abline(fit1, col=5)
+```
+
+```{r}
+summary(fit1)
+```
+###The 400M time is decreasing at an average rate of .065 per 4 years.
+
+## 4.10 Question 2.d
+```{r}
+par(mfrow=c(2,2))
+plot(fit1)
+```
+
+###The model appears to be a great fit to the data. Based on the QQ-plot and the Residuals v Fitted observation 1 appears to be an outliers where the time for the first gold medal does not correspond to the downward trend in time. Besides that data point, the observations fit the assumptions of normality fairly- there is linearity in the QQ plot as well as the residuals vs fitted demonstrating nearly constant variance. However, due to the limited number of observations x<30 this may be a suspect sample size.
+
+## 4.10 Question 2.e
+```{r}
+coeffs1 = coefficients(fit1)
+pred_time = c(2000, 2004, 2008, 2012)
+p_time = coeffs1[1] + coeffs1[2]*pred_time
+p_time
+```
+
+```{r}
+par(mfrow=c(2,2))
+fcast3 <- forecast(fit1, newdata=data.frame(Year=2000))
+plot(fcast3, xlab="Year", ylab="time")
+fcast4 <- forecast(fit1, newdata=data.frame(Year=2004))
+plot(fcast4, xlab="Year", ylab="time")
+fcast5 <- forecast(fit1, newdata=data.frame(Year=2008))
+plot(fcast5, xlab="Year", ylab="time")
+fcast6 <- forecast(fit1, newdata=data.frame(Year=2012))
+plot(fcast6, xlab="Year", ylab="time")
+```
+
+```{r}
+time2000 = data.frame(Year=2000)
+time2004 = data.frame(Year=2004)
+time2008 = data.frame(Year=2008)
+time2012 = data.frame(Year=2012)
+predict(fit1, time2000, interval="predict") 
+```
+
+```{r}
+predict(fit1, time2004, interval="predict")
+```
+
+```{r}
+predict(fit1, time2008, interval="predict") 
+```
+
+```{r}
+predict(fit1, time2012, interval="predict") 
+```
+###The underlying assumption about these calculations is that the underlying distribution is a normal distribution. The 95% predictive interval provides an acceptable range where the actual winning times may fit.
+
+## 4.10 Question 2.f
+```{r}
+coeffs1 = coefficients(fit1)
+pred_time = c(2000, 2004, 2008, 2012)
+p_time = coeffs1[1] + coeffs1[2]*pred_time
+p_time
+```
+
+```{r}
+olympic_ts[24:27,2]
+```
+###After the year 2000, the forecasts become increasingly inaccurate. The model was unable to account for the plateau that would occur around 43.65 seconds. The actual winning times were within the predictive intervals.
+
+## 4.10 Question 3
+
+###logy=B0+B1logx+e
+###take differential, assuming other variables are constant
+###dy/y = dx/x*B1 (dy/y / dx/x) = B1
+
+###change in y divided by y over the the change in x divided by x
+
+###percentage in y over the percentage change in x B1 is elasticity- the partial elasticity of the dependent variable with respect to the independent variable, ie percentage increase in the dependent variable with the percentage increase in the independent variable.
+
+###100(dy/y) = 100(dx/x)B1 % change y = % change x B1
+
+## 5.8 Question 1.a
+
+```{r}
+my_data = fancy
+plot(my_data)
+```
+
+###There is a seasonal pattern in the data. There is a spike at the end of the year. However, the hike is increasing every year.
+
+## 5.8 Question 1.b
+### To get an additive model of this fluctuation, logarithmic function should be applied.
+
+## 5.8 Question 1.c
+```{r}
+log_fancy <- log(my_data)
+dummy_season = rep(0, length(my_data))
+dummy_season[seq_along(dummy_season)%%12 == 3] <- 1
+dummy_season[3] <- 0
+dummy_season <- ts(dummy_season, freq = 12, start=c(1987,1))
+my_data1 <- data.frame(
+  log_fancy,
+  dummy_season
+)
+
+fit <- tslm(log_fancy ~ trend + season + dummy_season, data=my_data1)
+
+forcast_data <- data.frame(
+  dummy_season = rep(0, 12)
+)
+forcast_data[3,] <- 1
+forecast(fit, newdata=forcast_data)
+
+```
+
+## 5.8 Question 1.d
+```{r}
+plot(residuals(fit), type='p')
+plot(as.numeric(fitted(fit)), residuals(fit), type='p')
+
+```
+
+## The residuals plotted against the fitted values show no pattern and vary from -0.01 to more than 0.03. The trend is in random fashion
+
+## 5.8 Question 1.e
+```{r}
+boxplot(resid(fit) ~ cycle(resid(fit)))
+```
+
+## 5.8 Question 1.f
+```{r}
+summary(fit)
+
+```
+
+
+## 5.8 Question 1.g
+
+```{r}
+dwtest(fit, alt="two.sided")
+
+```
+#This test shows that there is some autocorrelation remaining in the residuals. Eventually some information is left over.
+
+## 5.8 Question 1.h
+```{r}
+
+forcast_data <- data.frame(
+  dummy_season = rep(0, 36)
+)
+preds <- forecast(fit, newdata=forcast_data)
+
+```
+
+
+## 5.8 Question 1.i
+```{r}
+
+df <- as.data.frame(preds)
+df <- exp(df)
+
+```
+
+## 5.8 Question 1.j
+###The autocorrection in residual model is just not enough. hence there is a need of dynamic regression
+
+
+## 5.8 Question 2.a
+```{r}
+df <- (texasgas)
+plot(df$price, df$consumption)
+
+```
+
+## 5.8 Question 2.b
+#The data is not linear. Hence to capture as much as data, we have to change the slope.
+
+## 5.8 Question 2.c
+###model 1
+
+```{r}
+fit <- lm(consumption ~ exp(price), df)
+summary(fit)
+```
+
+
+###model 2
+```{r}
+poly_fit <- lm(consumption ~ poly(price, 2), df)
+
+```
+
+
+###model3
+```{r}
+linear_mod<- lm(consumption ~ price, df)
+segmented_mod <- segmented(linear_mod, seg.Z = ~price, psi=60)
+slope(segmented_mod)
+
+```
+
+
+
+
+## 5.8 Question 2.d
+
+###model-1
+### Adjusted R-squared: -0.004 
+### AIC: 200.736
+
+```{r}
+
+resid <- residuals(fit)
+plot(fit$fitted.values, resid, ylab='residuals', xlab='fitted values', main='linear regression')
+abline(0,0)
+
+```
+
+
+###model-2-polynomial regression.
+
+### Adjusted R-squared:  0.812
+### AIC: 168.116
+
+```{r}
+
+res <- residuals(poly_fit)
+plot(poly_fit$fitted.values, res, ylab='residuals', xlab='fitted values',  main='polynomial linear regression')
+abline(0,0)
+
+```
+
+
+###model-3-piecewise linear regression
+
+### Adjusted R-squared:  0.847
+### AIC: 164.756
+
+```{r}
+resid <- residuals(segmented_mod)
+plot(segmented_mod$fitted.values, resid, ylab='residuals', xlab='fitted values', main='piecewise linear regression')
+abline(0,0)
+
+```
+
+
+## 5.8 Question 2.e
+
+```{r}
+new_data <- data.frame(price=c(40, 60, 80, 100, 120))
+predict(segmented_mod, new_data)
+
+```
+
+
+## 5.8 Question 2.f
+```{r}
+new_seq_data <- seq(min(new_data), max(new_data), length.out=5)
+intervals <- predict(segmented_mod, new_data, interval="predict") 
+
+plot(consumption ~ price, data = df, type = 'n')
+
+polygon(c(rev(new_seq_data), new_seq_data), c(rev(intervals[ ,3]), intervals[ ,2]), col = 'grey80', border = NA)
+
+```
+
+###prediction intervals are fairly wide meaning we only have a rough idea of how much energy will be demanded.
