@@ -1,0 +1,507 @@
+---
+title: "HW2"
+author: "~PradnyaC"
+date: "April 28, 2017"
+output: html_document
+---
+
+```{r}
+library(fpp)
+library(fma)
+library(forecast)
+library(TTR)
+```
+
+# Q6.7 - 1 is in .doc included 
+
+
+###Q6.7 - 2.a: Plot the time series of sales of product A
+```{r}
+fit <- stl(plastics, s.window=5)
+plot(plastics, col="gray",
+ main="Plastics Manufacturer",
+ ylab="Product A Sales index", xlab="")
+lines(fit$time.series[,2],col="red",ylab="Trend")
+plot(fit)
+
+```
+
+There is a slight upward trend and yearly seasonality in the data.  
+
+### Q6.7 - 2.b: classical multiplicative decomposition
+```{r}
+
+fit <- decompose(plastics, type="multiplicative")
+plot(fit)
+trend_indices <- fit$trend
+trend_indices
+seasonal_indices <- fit$seasonal
+seasonal_indices
+```
+
+### Q6.7 - 2.c: 
+#### Results from part (b) support the graphical interpretation from part (a).The graph indicates that the summer months should have higher seasonal indices than the winter months and this is indeed the case.
+
+### Q6.7 - 2.d:Seasonally adjusted plot
+```{r}
+plot(plastics, col="grey",
+ main="Plastics Manufacturer",
+  xlab="", ylab="Product A Sales index")
+lines(seasadj(fit),col="red",ylab="Seasonally adjusted")
+```
+
+### Q6.7 - 2.e :Change one observation to be an outlier, and recompute the seasonally adjusted data
+```{r}
+plastics_out = plastics
+#Added 500 to 20th element
+plastics_out[20] = plastics_out[20]+500
+
+plot(plastics_out, col="grey",
+ main="Plastics Manufacturer",
+  xlab="", ylab="Product A Sales index")
+fit_out <- decompose(plastics_out, type="multiplicative")
+lines(seasadj(fit_out),col="red",ylab="Seasonally adjusted")
+```
+
+The sharp spike due to added 500 is present in the adjusted seasonal plot. It is not smoothened out as it is not seasonal. 
+
+### Q6.7 - 2.f : Changing last element of the time series
+```{r}
+plastics_out = plastics
+#Added 500 to 20th element
+plastics_out[60] = plastics_out[60]+500
+
+plot(plastics_out, col="grey",
+ main="Plastics Manufacturer",
+  xlab="", ylab="Product A Sales index")
+fit_out <- decompose(plastics_out, type="multiplicative")
+lines(seasadj(fit_out),col="red",ylab="Seasonally adjusted")
+```
+
+The sharp spike is still in the data.
+
+### Q6.7 - 2.g :Random walk with drift to produce forecasts of the seasonally adjusted data
+
+```{r}
+fitrwf <- rwf(seasadj(fit), drift=TRUE)
+fitrwf
+```
+
+
+### Q6.7 - 2.h :Reseasonalize the results to give forecasts on the original scale.
+
+```{r}
+
+fit_re <- stl(plastics, t.window=15, s.window="periodic", robust=TRUE)
+fit_forecast <- forecast(fit_re, method="naive")
+
+fit_forecast
+```
+
+
+### Q6.7 - 3.a: Describe the results of the seasonal adjustment
+Seperating the trend component from the seasonal component shows that the trend 
+has increased through out  the majority of the time frame, with a few stationary
+periods occuring in the early 90s. The monthly breakdown of the seasonal
+component shows that a few months show greater velocities in their variations
+than other months.
+
+### Q6.7 - 3.b:Is the recession of 1991/1992 visible in the estimated components?
+Yes the large residuals during that time period capture this information.
+
+### Q7.8 - 1.a : Plot the series and discuss the main features of the data
+```{r}
+
+plot(books)
+```
+# Both paperback and hardcover books have a positive trend and both show fairly large fluctations in daily sales. This may be due to sales spiking at certain periods of the week, probably at weekends
+
+###Q7.8 - 1.b : Use SSE to explore different values of alpha for the paperback series
+
+```{r}
+pb <- books[,1]
+
+fit1 <- ses(pb, initial='simple', alpha=0.2, h=4)
+sum((pb - fitted(fit1))) #51.94
+
+fit2 <- ses(pb, initial='simple', alpha=0.3, h=4)
+sum((pb - fitted(fit2))) #52.24
+
+fit3 <- ses(pb, initial='simple', alpha=0.4, h=4)
+sum((pb - fitted(fit3))) #50.28
+
+fit4 <- ses(pb, initial='simple', alpha=0.5, h=4)
+sum((pb - fitted(fit4))) #48.62
+
+fit5 <- ses(pb, initial='simple', alpha=0.6, h=4)
+sum((pb - fitted(fit5))) #47.45
+
+fit6 <- ses(pb, initial='simple', alpha=0.65, h=4)
+sum((pb - fitted(fit6))) #47.05
+
+fit7 <- ses(pb, initial='simple', alpha=0.7, h=4)
+sum((pb - fitted(fit7))) #46.78
+
+fit8 <- ses(pb, initial='simple', alpha=0.75, h=4)
+sum((pb - fitted(fit8))) #46.66 ## Lowest value
+
+fit9 <- ses(pb, initial='simple', alpha=0.8, h=4)
+sum((pb - fitted(fit9))) #46.67
+
+fit10 <- ses(pb, initial='simple', alpha=0.81, h=4)
+sum((pb - fitted(fit10))) #46.69 
+
+
+fit11 <- ses(pb, initial='simple', alpha=0.82, h=4)
+sum((pb - fitted(fit11))) #46.72 
+
+fit12 <- ses(pb, initial='simple', alpha=0.85, h=4)
+sum((pb - fitted(fit12))) #46.82
+
+fit13 <- ses(pb, initial='simple', alpha=0.9, h=4)
+sum((pb - fitted(fit13))) #47.10 - previous sse was smaller so choose smaller alpha.
+
+fit14 <- ses(pb, initial='simple', alpha=1, h=4)
+sum((pb - fitted(fit14))) #48
+
+alpha <- c(0.2, 0.3, 0.4, 0.6, 0.65, 0.7, 0.75, 0.8, 0.81, 0.82, 0.83, 0.85, 0.9, 1)
+sse <- c(51.94, 52.24, 50.28, 48.62, 47.45, 47.05, 46.78, 46.66, 46.67, 46.69, 46.72, 46.82, 47.10, 48)
+plot(alpha, sse)
+
+```
+
+# 0.75 provides the smallest SSE. Increasing alpha from 0.2 to 0.75 provides increasing 
+# improvements in the SSE, after this minimum increasing alpha increases SSE.
+
+###7.8. - 1.c: Now let ses select the optimal value of alpha. Use this value to generate forecasts for the next four days. Compare your results with b.
+
+```{r}
+fit1o_pb <- ses(pb, initial='simple', h=4)
+fit2b_pb <- ses(pb, initial='simple', alpha=0.75, h=4)
+par(mfrow=c(1,2))
+plot(fit1o_pb, main="SSE Chosen alpha")
+plot(fit2b_pb, main="Custom alpha: 0.75")
+
+```
+
+# The model SES chooses predicts lower forecasts than the previous model. The prediction intervals are also smaller for the model SES chooses.
+
+###Q7.8 - 1.d : Repeat but with initial="optimal". How much difference does an optimal initial level make? 
+
+```{r}
+fit3_init_o <- ses(pb, initial='optimal', h=4)
+sum((pb - fitted(fit3_init_o)))
+```
+
+# The model has a higher SSE and is more pessimistic than the initial = simple models.
+
+###Q7.8 - 1.e : Repeat steps (b)-(d) with the hardcover series
+```{r}
+hc <- books[,2]
+fit1 <- ses(hc, initial='simple', alpha=0.2, h=4)
+sum((hc - fitted(fit1))) #465.087
+
+fit2 <- ses(hc, initial='simple', alpha=0.3, h=4)
+sum((hc - fitted(fit2))) #330.8279
+
+fit3 <- ses(hc, initial='simple', alpha=0.4, h=4)
+sum((hc - fitted(fit3))) #258.6009
+
+fit4 <- ses(hc, initial='simple', alpha=0.5, h=4)
+sum((hc - fitted(fit4))) #213.471
+
+fit5 <- ses(hc, initial='simple', alpha=0.6, h=4)
+sum((hc - fitted(fit5))) #182.4209
+
+fit6 <- ses(hc, initial='simple', alpha=0.65, h=4)
+sum((hc - fitted(fit6))) #170.2422
+
+fit7 <- ses(hc, initial='simple', alpha=0.7, h=4)
+sum((hc - fitted(fit7))) #159.7155
+
+fit8 <- ses(hc, initial='simple', alpha=0.75, h=4)
+sum((hc - fitted(fit8))) #150.5632
+
+fit9 <- ses(hc, initial='simple', alpha=0.8, h=4)
+sum((hc - fitted(fit9))) #142.5857
+
+fit10 <- ses(hc, initial='simple', alpha=0.81, h=4)
+sum((hc - fitted(fit10))) #141.1176 
+
+
+fit11 <- ses(hc, initial='simple', alpha=0.82, h=4)
+sum((hc - fitted(fit11))) #139.6896 
+
+fit12 <- ses(hc, initial='simple', alpha=0.85, h=4)
+sum((hc - fitted(fit12))) #135.6372
+
+fit13 <- ses(hc, initial='simple', alpha=0.9, h=4)
+sum((hc - fitted(fit13))) #129.609 
+
+fit14 <- ses(hc, initial='simple', alpha=1, h=4)
+sum((hc - fitted(fit14))) #120
+
+alpha <- c(0.2, 0.3, 0.4, 0.6, 0.65, 0.7, 0.75, 0.8, 0.81, 0.82, 0.83, 0.85, 0.9, 1)
+sse <- c(465.087, 330.8279, 258.6009, 213.471, 182.4209, 170.2422, 159.7155, 150.5632,142.5857,141.1176, 139.6896, 135.6372,135.6372,120)
+plot(alpha, sse)
+# As alpha increases the SSE keeps declining.
+fit1 <- ses(hc, initial='simple', h=4)
+fit2 <- ses(hc, initial='simple', alpha=1, h=4)
+par(mfrow=c(1,2))
+plot(fit1, main="SSE Chosen alpha")
+plot(fit2, main="Custom alpha: 1")
+# Letting the SES function automatically choose alpha gives lower point forecasts than the previous custom alpha produced.
+fit3 <- ses(hc, initial='optimal', h=4)
+sum((hc - fitted(fit3)))
+# Setting the intial paramater to 'optimal' gives very similar results to 'simple'.
+
+```
+
+###7.8. - 2.a: Compare the SSE measures of Holt's method for the two series to those of simple exponential smoothing in the previous question. 
+
+```{r}
+par(mfrow=c(1,2))
+fit0h <- holt(books[,1], initial = "simple", h=4)
+summary(fit0h)
+
+plot(books[,1], main="paperback sales", xlab="days", ylab="money", xlim=c(0,40))
+lines(fitted(fit0h), col="blue", type="o")
+lines(fit0h$mean, col="red", type="o")
+legend("topleft", lty=1, col=c(1,"blue","red"), c("data", expression(alpha -- 0.2984, beta -- 0.4984)), pch=1)
+
+sse0hopt <- sum(residuals(fit0h)^2);
+sse0hopt
+
+fit1h<- holt(books[,2], initial = "optimal", h=4)
+summary(fit1h)
+
+plot(books[,2], main="hardcover sales", xlab="days", ylab="money", xlim=c(0,40))
+lines(fitted(fit1h), col="blue", type="o")
+lines(fit1h$mean, col="red", type="o")
+legend("topleft", lty=1, col=c(1,"blue","red"), c("data", expression(alpha -- 0.07, beta -- 0)), pch=1)
+```
+
+###7.8. - 2.b : Compare the forecasts for the two series using both methods. Which do you think is best?
+
+```{r}
+plot(fit0h, xlab="days", ylab= "Money")
+
+plot(fit1h, xlab="days", ylab="Money")
+```
+
+###7.8. - 2.c : Calculate a 95% prediction interval for the first forecast for each series using both methods, assuming normal errors. Compare your forecasts with those produced by R.
+
+```{r}
+etspb <- ets(books[,"Paperback"])
+plot(forecast(etspb, h=4))
+etshb <- ets(books[,"Hardcover"])
+plot(forecast(etshb, h=4))
+```
+
+
+------------------------------------------------------------------------------------------------
+###8.11 - 5. Use R to simulate and plot some data from simple ARIMA models.
+
+
+###8.11 - 5.a : Use the following R code to generate data from an AR(1) model with ??1=0.6 ??2=0.6. The process starts with y0=0.
+
+```{r}
+y <- ts(numeric(100))
+e <- rnorm(100)
+for(i in 2:100)
+  y[i] <- 0.6*y[i-1] + e[i]
+```
+
+###8.11 - 5.b : Produce a time plot for the series. How does the plot change as you change ?
+
+```{r}
+plot(y, main="time series", xlab="time")
+```
+
+```{r}
+sim.data.arl <- function(n.obs, phi, seed.nr){
+ set.seed(seed.nr)
+y <- ts(numeric(n.obs))
+e <- rnorm(n.obs)
+for (i in 2:n.obs)
+ y[i] <- phi*y[i-1] + e[i]
+return(y)
+}
+
+plot(sim.data.arl(100, 0.9, 2), main= "time series", xlab="times")
+lines(sim.data.arl(100, 0.9, 2), col="blue")
+```
+
+
+###8.11 - 5.c : Write your own code to generate data from an MA(1) model with ??1=0.6 and ??2=1.
+
+```{r}
+sim.data.mal <- function(n.obs, theta, seed.nr){
+ set.seed(seed.nr)
+y <- ts(numeric(n.obs))
+e <- rnorm(n.obs)
+for (i in 2:n.obs)
+ y[i] <- theta*y[i-1] + e[i]
+return(y)
+}
+
+```
+
+###8.11 - 5.d : Produce a time plot for the series. How does the plot change as you change ??1? 
+```{r}
+plot(sim.data.mal(100, 0.6, 2), main="time series", xlab="time")
+```
+
+###8.11 - 5.e :Generate data from an ARMA(1,1) model with ??1 = 0.6 and   ??1=0.6 and ??2=1.
+```{r}
+sim.data.armal1 <- function(n.obs, theta, seed.nr){
+  set.seed(seed.nr)
+  y <- ts(numeric(n.obs))
+  e <- rnorm(n.obs)
+  for (i in 2:n.obs)
+    y[i] <- phi*y[i-1] + theta*e[i-1] + e[i]
+  return(y)
+}
+```
+
+###8.11 - 5.f :Generate data from an AR(2) model with ??1=-0.8 and ??2=0.3 and ??2=1. (Note that these parameters will give a non-stationary series.)
+```{r}
+sim.data.ar2 <- function(n.obs, phi1, phi2, seed.nr){
+  set.seed(seed.nr)
+  y <- ts(numeric(n.obs))
+  e <- rnorm(n.obs)
+  for(i in 3: n.obs)
+    y[i] <- phi1*y[i-1] + phi2*y[i-2] + e[i]
+  return(y)
+}
+```
+
+###8.11 - 5.g :  Graph the latter two series and compare them.
+```{r}
+plot(sim.data.ar2(100, 0.6, 0.6, 2), main="timeseries", xlab="time")
+plot(sim.data.ar2(100, -0.8, 0.3, 2), main="timeseries", xlab="time")
+```
+
+###8.11 - 6 : Consider the number of women murdered each year (per 100,000 standard population) in the United States (data set wmurders). 
+###8.11 - 6.a : By studying appropriate graphs of the series in R, find an appropriate ARIMA(p,d,qp,d,q) model for these data.
+```{r}
+data(wmurders)
+tsdisplay(wmurders)
+```
+
+This is clearly not stationary. Let's start with taking the first difference.
+```{r}
+wmurders.d1 <- diff(wmurders)
+tsdisplay(wmurders.d1)
+```
+
+This looks much better, but the ACF and PACF still show some significant spikes at a lag of two. Let's try a unit root test:
+
+```{r}
+adf.test(wmurders.d1)
+kpss.test(wmurders.d1)
+```
+
+These tests are telling us different things. An ADF test $< 0.05$ indicates a stationary series, but a KPSS test $< 0.05$ indicates a non-stationary series. Take another difference and see what happens:
+```{r}
+wmurders.d2 <- diff(diff(wmurders))
+
+tsdisplay(wmurders.d2)
+
+# unit root tests
+adf.test(wmurders.d2)
+kpss.test(wmurders.d2)
+```
+
+Now both unit root tests tell us we have a stationary series.
+
+Looking at the ACF and PACF plots, the large spike at 1 tells us we need either p or q to be 1. Let's start with $p=1$ and test several ARIMA models in that neighborhood:
+
+```{r}
+test.arima <- function(t.series, order){
+  df <- data.frame(model=paste0("ARIMA(", 
+                                paste0(order, collapse=","), 
+                                ")"),
+                   AICc=Arima(t.series, order=order)$aicc)
+  return(df)
+}
+
+gridSearch <- expand.grid(c(0, 1, 2),
+                          c(1, 2),
+                          c(0, 1, 2))
+df.list <- apply(gridSearch, MARGIN=1, FUN=function(x) {test.arima(wmurders, x)})
+
+df <- do.call(rbind, df.list)
+
+df
+```
+
+Trying several models, including several with $d=1$ since the residual tests were borderline, we find the model with the lowest AICc to be r df[df$AICc == min(df$AICc), "model"]. Let's fit this model and test the residuals:
+
+```{r}
+fit <- Arima(wmurders, order=c(0, 1, 2))
+tsdisplay(residuals(fit), lag.max=20)
+```
+
+There are no significant spikes in either the ACF or PACF plots. Let's confirm with a portmanteau test:
+
+```{r}
+Box.test(residuals(fit), lag=24, fitdf=4, type="Ljung")
+```
+
+The portmanteau test indicates the residuals are white noise so we conclude that the best model is ARIMA(0, 1, 2).
+
+###8.11 - 6.b :  Should you include a constant in the model? Explain.
+No. A constant introduces drift into the model, which we do not appear to have in these data.
+
+###8.11 - 6.c : Write this model in terms of the backshift operator.
+
+$$ (1 - B)^2 y_t = (1 + \theta_1B + \theta_2B^2)e_t$$
+
+###8.11 - 6.d : Fit the model using R and examine the residuals. Is the model satisfactory?
+Answer explained above
+
+###8.11 - 6.e : Forecast three times ahead. Check your forecasts by hand to make sure you know how they have ben calculated.
+```{r}
+fcast <- forecast(fit, h=4)
+fcast$mean
+```
+
+```{r}
+toforecast <- 3
+
+yt <- fit$x
+et <- fit$residuals
+theta1 <- as.numeric(fit$coef['ma2'])
+theta2 <- as.numeric(fit$coef['ma1'])
+
+for (h in 1:toforecast){
+  n <- length(yt)
+  y_tp1 <- 2 * yt[n] - yt[n - 1] + theta1 * et[n] + theta2 * et[n - 1]
+  yt <- c(yt, y_tp1)
+  et <- c(et, 0)
+}
+
+f <- yt[(length(yt) - toforecast + 1):length(yt)]
+
+plot(fcast)
+lines(fit$x - fit$residuals, col='blue')
+points(c(2005, 2006, 2007), f, col='red')
+```
+
+###8.11 - 6.f : Create a plot of the series with forecasts and prediction intervals for the next three periods shown.
+```{r}
+plot(fcast)
+```
+
+
+###8.11 - 6.g : Does auto.arima give the same model you have chosen? If not, which model do you think is better?
+```{r}
+auto.arima(wmurders)
+```
+
+The auto.arima function returns ARIMA(1, 2, 1) as the best model. We see in out table that the AICc for that model is -6.4 while the AICc for the model we selected is -11.4. As long as the residuals look okay, I don't see why we wouldn't go with the model with the lower AICC.
+
+
+
+
